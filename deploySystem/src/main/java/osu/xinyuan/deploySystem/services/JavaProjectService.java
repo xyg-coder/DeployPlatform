@@ -1,15 +1,27 @@
 package osu.xinyuan.deploySystem.services;
 
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
+import osu.xinyuan.deploySystem.repositories.JavaProjectStatus;
+import osu.xinyuan.deploySystem.util.DeployFailureException;
+
+import java.io.IOException;
 
 public interface JavaProjectService {
-    void deploy(JavaProjectInfo info);
+    void addJavaProject(JavaProjectInfo info) throws IllegalArgumentException, IOException;
 
-    void stop(int id);
+    void deploy(int id) throws DeployFailureException, IOException;
 
-    void restart(int id);
+    String getDeployLog(int id) throws IOException;
 
-    void update(int id);
+    void start(int id) throws IOException;
 
-    String getLog(int id);
+    String getRunningLog(int id) throws IOException;
+
+    void stop(int id) throws IOException;
+
+    JavaProjectStatus getProjectStatus(int id) throws IOException;
+
+    void restart(int id) throws IOException;
+
+    void update(int id) throws DeployFailureException, IOException;
 }
