@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>New Java Project</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css">
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/js/bootstrap.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.3.1.min.js"
+            integrity="sha256-FgpCb/KJQlLNfOu91ta32o/NMZxltwRo8QtmkMRdAu8="
+            crossorigin="anonymous"></script>
+</head>
+<body>
+<form action="new-java-project" th:action="@{~/new-java-project}" id="ajax-contact" method="post">
+    <div>
+        <lable for="name">Name:</lable>
+        <input type="text" id="name" name="name" required>
+    </div>
+    <div>
+        <label for="description">Description:</label>
+        <input type="text" id="description" name="description" required>
+    </div>
+    <div>
+        <label for="url">Url:</label>
+        <input type="url" id="url" name="url" required>
+    </div>
+    <div>
+        <label for="rootPath">Root path:</label>
+        <input type="text" id="rootPath" name="rootPath" required>
+    </div>
+    <div>
+        <label for="mainName">Main Name:</label>
+        <input type="text" id="mainName" name="mainName" required>
+    </div>
+    <input type="submit" value="Create java project">
+</form>
+
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    $(function () {
+        $('form').submit(function (event) {// firstly check if the url is valid
+            event.preventDefault();
+            var urlVal = $('#url').val();
+            $.ajax({
+                url: $('form').attr('action'),
+                type: 'GET',
+                data: {
+                    'url': urlVal
+                },
+            }).done(function (response) {
+                console.log('success', response);
+                $('form').unbind('submit').submit();
+            }).fail(function (data) {
+                alert(data.responseText);
+            });
+        });
+    });
+
+    /*]]>*/
+</script>
+
+</body>
+</html>

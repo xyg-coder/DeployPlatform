@@ -5,8 +5,11 @@ import osu.xinyuan.deploySystem.repositories.JavaProjectStatus;
 import osu.xinyuan.deploySystem.util.DeployFailureException;
 
 import java.io.IOException;
+import java.util.List;
 
 public interface JavaProjectService {
+    List<JavaProjectInfo> getAllJavaProjects();
+
     void addJavaProject(JavaProjectInfo info) throws IllegalArgumentException, IOException;
 
     void deploy(int id) throws DeployFailureException, IOException;

@@ -11,14 +11,29 @@ import osu.xinyuan.deploySystem.util.DeployFailureException;
 import osu.xinyuan.deploySystem.util.ShellUtil;
 
 import java.io.IOException;
+import java.util.List;
 
 @Service
 public class JavaProjectServiceImpl implements JavaProjectService {
+
     @Autowired
     private JavaProjectInfoRepo javaProjectInfoRepo;
 
     private Logger logger = LoggerFactory.getLogger(JavaProjectServiceImpl.class);
 
+
+    public JavaProjectInfoRepo getJavaProjectInfoRepo() {
+        return javaProjectInfoRepo;
+    }
+
+    public void setJavaProjectInfoRepo(JavaProjectInfoRepo javaProjectInfoRepo) {
+        this.javaProjectInfoRepo = javaProjectInfoRepo;
+    }
+
+    @Override
+    public List<JavaProjectInfo> getAllJavaProjects() {
+        return javaProjectInfoRepo.findAll();
+    }
 
     /**
      * check the git url of this project, add it to the database
@@ -52,7 +67,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         }
 
         ShellUtil.deployJavaProject(info);
-        info.setDeployed(true);
+        info.setIsDeployed(true);
         javaProjectInfoRepo.save(info);
     }
 
@@ -70,7 +85,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.isDeployed()) {
+        if (!info.getIsDeployed()) {
             logger.error("getDeployLog", "Not deployed yet");
             throw new IOException("Not deployed yet");
         }
@@ -91,7 +106,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.isDeployed()) {
+        if (!info.getIsDeployed()) {
             logger.error("start", "Not deployed yet");
             throw new IOException("Not deployed yet");
         }
@@ -113,7 +128,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.isDeployed()) {
+        if (!info.getIsDeployed()) {
             logger.error("getRunningLog", "Not deployed yet");
             throw new IOException("Not deployed yet");
         }
@@ -151,7 +166,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.isDeployed()) {
+        if (!info.getIsDeployed()) {
             return JavaProjectStatus.UNDEPLOYED;
         } else if (ShellUtil.javaProjectIsRunning(info)) {
             return JavaProjectStatus.RUNNING;

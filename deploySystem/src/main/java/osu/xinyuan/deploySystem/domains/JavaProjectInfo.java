@@ -7,7 +7,7 @@ public class JavaProjectInfo {
 
     @Id
     @Column(name = "PROJECT_ID")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
 
     @Column(name = "NAME")
@@ -80,11 +80,24 @@ public class JavaProjectInfo {
         this.name = name;
     }
 
-    public boolean isDeployed() {
+    public boolean getIsDeployed() {
         return isDeployed;
     }
 
-    public void setDeployed(boolean deployed) {
+    public void setIsDeployed(boolean deployed) {
         isDeployed = deployed;
+    }
+
+    @Override
+    public String toString() {
+        return "JavaProjectInfo{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", description='" + description + '\'' +
+                ", url='" + url + '\'' +
+                ", rootPath='" + rootPath + '\'' +
+                ", mainName='" + mainName + '\'' +
+                ", isDeployed=" + isDeployed +
+                '}';
     }
 }
