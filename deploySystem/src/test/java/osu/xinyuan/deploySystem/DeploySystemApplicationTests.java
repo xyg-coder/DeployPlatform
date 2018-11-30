@@ -15,6 +15,8 @@ import osu.xinyuan.deploySystem.util.ShellUtil;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 import static org.junit.Assert.*;
 
@@ -90,17 +92,26 @@ public class DeploySystemApplicationTests {
 	}
 
 	@Test
-	public void testDeployLogAndRunningLog() throws IOException {
+	public void testDeployLogAndRunningLog() throws IOException, DeployFailureException {
 		JavaProjectInfo info = new JavaProjectInfo();
 		info.setId(11);
 		info.setUrl("https://github.com/xinyuangui2/test.git");
 		info.setRootPath("test/my-app/");
 		info.setMainName("com.mycompany.app.App");
 
+//		ShellUtil.deployJavaProject(info);
+//		ShellUtil.startJavaProject(info);
+
 		String deployedLog = ShellUtil.getDeployedLog(info);
 		System.out.println(">>> deployedlog\n" + deployedLog);
 
 		String runningLog = ShellUtil.getRunningLog(info);
 		System.out.println(">>> runninglog\n" + runningLog);
+	}
+
+	@Test
+	public void testPathJoin() {
+		Path filePath = Paths.get("codes/deploy/", "///../test", "3", "test");
+		System.out.println(">>>path:\n" + filePath.toString());
 	}
 }

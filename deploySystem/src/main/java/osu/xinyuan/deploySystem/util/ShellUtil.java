@@ -9,7 +9,7 @@ import osu.xinyuan.deploySystem.services.JavaProjectServiceImpl;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.NoSuchFileException;
+import java.nio.file.Paths;
 
 public class ShellUtil {
 
@@ -117,28 +117,18 @@ public class ShellUtil {
     }
 
     public static String getDeployedLog(JavaProjectInfo info) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("codes/deploy/").append(info.getId())
-                .append("/").append(info.getRootPath());
-        if (sb.charAt(sb.length() - 1) == '/') {
-            sb.append("package_log.log");
-        } else {
-            sb.append("/package_log.log");
-        }
+        String path =
+                Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "package_log.log")
+                        .toString();
 
-        return getTxtFile(sb.toString());
+        return getTxtFile(path);
     }
 
     public static String getRunningLog(JavaProjectInfo info) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("codes/deploy/").append(info.getId())
-                .append("/").append(info.getRootPath());
-        if (sb.charAt(sb.length() - 1) == '/') {
-            sb.append("nohup.out");
-        } else {
-            sb.append("/nohup.out");
-        }
+        String path =
+                Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "nohup.out")
+                        .toString();
 
-        return getTxtFile(sb.toString());
+        return getTxtFile(path);
     }
 }
