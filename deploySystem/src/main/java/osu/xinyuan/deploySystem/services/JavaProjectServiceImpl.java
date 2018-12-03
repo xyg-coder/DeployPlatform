@@ -3,12 +3,14 @@ package osu.xinyuan.deploySystem.services;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
 import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
-import osu.xinyuan.deploySystem.repositories.JavaProjectStatus;
+import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 import osu.xinyuan.deploySystem.util.DeployFailureException;
 import osu.xinyuan.deploySystem.util.ShellUtil;
+import osu.xinyuan.deploySystem.util.Util;
 
 import java.io.IOException;
 import java.util.List;
@@ -18,6 +20,9 @@ public class JavaProjectServiceImpl implements JavaProjectService {
 
     @Autowired
     private JavaProjectInfoRepo javaProjectInfoRepo;
+
+    @Autowired
+    private JmsTemplate jmsTemplate;
 
     private Logger logger = LoggerFactory.getLogger(JavaProjectServiceImpl.class);
 
@@ -43,7 +48,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
      */
     @Override
     public void addJavaProject(JavaProjectInfo info) throws IllegalArgumentException, IOException {
-        if (!ShellUtil.isValidRepo(info.getUrl())) {
+        if (!Util.isValidRepo(info.getUrl())) {
             logger.error("addJavaProject", "invalid url: " + info.getUrl());
             throw new IllegalArgumentException("invalid git url");
         }
@@ -66,8 +71,9 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        ShellUtil.deployJavaProject(info);
-        info.setIsDeployed(true);
+
+        ShellUtil.deployJavaProject(info, jmsTemplate);
+        info.setStatus(JavaProjectStatus.DEPLOYED);
         javaProjectInfoRepo.save(info);
     }
 
@@ -83,11 +89,6 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         if (info == null) {
             logger.error("getDeployLog", "no such info");
             throw new IOException("no such info");
-        }
-
-        if (!info.getIsDeployed()) {
-            logger.error("getDeployLog", "Not deployed yet");
-            throw new IOException("Not deployed yet");
         }
 
         return ShellUtil.getDeployedLog(info);
@@ -106,12 +107,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.getIsDeployed()) {
-            logger.error("start", "Not deployed yet");
-            throw new IOException("Not deployed yet");
-        }
-
-        ShellUtil.startJavaProject(info);
+        ShellUtil.startJavaProject(info, jmsTemplate);
     }
 
     /**
@@ -126,11 +122,6 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         if (info == null) {
             logger.error("getRunningLog", "no such info");
             throw new IOException("no such info");
-        }
-
-        if (!info.getIsDeployed()) {
-            logger.error("getRunningLog", "Not deployed yet");
-            throw new IOException("Not deployed yet");
         }
 
         return ShellUtil.getRunningLog(info);
@@ -149,7 +140,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        ShellUtil.killJavaProject(info);
+        ShellUtil.killJavaProject(info, jmsTemplate);
     }
 
     /**
@@ -166,13 +157,7 @@ public class JavaProjectServiceImpl implements JavaProjectService {
             throw new IOException("no such info");
         }
 
-        if (!info.getIsDeployed()) {
-            return JavaProjectStatus.UNDEPLOYED;
-        } else if (ShellUtil.javaProjectIsRunning(info)) {
-            return JavaProjectStatus.RUNNING;
-        } else {
-            return JavaProjectStatus.STOP;
-        }
+        return javaProjectInfoRepo.findById(id).getStatus();
     }
 
     /**
@@ -194,5 +179,9 @@ public class JavaProjectServiceImpl implements JavaProjectService {
     @Override
     public void update(int id) throws DeployFailureException, IOException {
         deploy(id);
+    }
+
+    public void setJmsTemplate(JmsTemplate jmsTemplate) {
+        this.jmsTemplate = jmsTemplate;
     }
 }

@@ -1,34 +1,20 @@
 package osu.xinyuan.deploySystem.util;
 
-import org.apache.commons.io.IOUtils;
+import org.apache.commons.exec.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jms.core.JmsTemplate;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
-import osu.xinyuan.deploySystem.services.JavaProjectServiceImpl;
+import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStream;
 import java.nio.file.Paths;
 
 public class ShellUtil {
 
-    private static Logger logger = LoggerFactory.getLogger(JavaProjectServiceImpl.class);
-
-    /**
-     * check the validation of the git url(must be public repo)
-     * @return true if the repo is valid
-     */
-    public static boolean isValidRepo(String url) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("./shell/check_git_remote.sh ").append(url);
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
-        try(InputStream errorStream = process.getErrorStream()) {
-            String err = IOUtils.toString(errorStream, "UTF-8");
-            return err.isEmpty();
-        }
-    }
+    private static Logger logger = LoggerFactory.getLogger(ShellUtil.class);
 
     /**
      * get the text of one file, can be used to read the log
@@ -42,51 +28,75 @@ public class ShellUtil {
             throw new IOException("No such file");
         }
         sb.append("./shell/read_file.sh ").append(path);
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
-        try(InputStream inputStream = process.getInputStream()) {
-            String res = IOUtils.toString(inputStream, "UTF-8");
-            return res;
-        }
+
+        CommandLine commandLine = CommandLine.parse(sb.toString());
+        DefaultExecutor executor = new DefaultExecutor();
+        executor.setExitValues(null);
+
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+        executor.setStreamHandler(streamHandler);
+        executor.execute(commandLine);
+
+        return outputStream.toString();
     }
 
     /**
      * try to deploy the project
      * should be called after the check of url
+     * If deployed success, will send message to server
      * @param info
      * @throws DeployFailureException
      */
-    public static void deployJavaProject(JavaProjectInfo info) throws DeployFailureException, IOException {
+    public static void deployJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws DeployFailureException, IOException {
+        String rootPath = Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath()).toString();
+
         StringBuilder sb = new StringBuilder();
         sb.append("./shell/java-project/java_deploy.sh ")
                 .append(info.getId()).append(" ")
                 .append(info.getUrl()).append(" ")
-                .append(info.getRootPath());
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
-        try {
-            process.waitFor();
-        } catch (InterruptedException e) {
-            logger.error(e.getMessage());
-        }
-        if (0 != process.exitValue()) {
+                .append(rootPath);
+
+        ExecuteWatchdog watchdog = new ExecuteWatchdog(60*1000);
+        Executor executor = new DefaultExecutor();
+        executor.setWatchdog(watchdog);
+
+        int exitValue = executor.execute(CommandLine.parse(sb.toString()));
+
+        if (exitValue == 1) {
             throw new DeployFailureException();
+        } else {
+            jmsTemplate.send("javaProjectStatus",
+                    session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.DEPLOYED.name()));
         }
     }
 
     /**
      * start java project after the deployment
+     * default running time 2 minute
      * @param info
      * @throws IOException
      */
-    public static void startJavaProject(JavaProjectInfo info) throws IOException {
+    public static void startJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
         StringBuilder sb = new StringBuilder();
+        String rootPath = Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath()).toString();
+
         sb.append("./shell/java-project/java_start.sh ")
                 .append(info.getId()).append(" ")
-                .append(info.getRootPath()).append(" ")
+                .append(rootPath).append(" ")
                 .append(info.getMainName());
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
+
+        JavaProjectExecuteResultHandler handler =
+                new JavaProjectExecuteResultHandler(info.getId(), JavaProjectStatus.STOP);
+
+        ExecuteWatchdog watchdog = new ExecuteWatchdog(120 * 1000);
+        Executor executor = new DefaultExecutor();
+        executor.setWatchdog(watchdog);
+
+        executor.execute(CommandLine.parse(sb.toString()), handler);
+
+        jmsTemplate.send("javaProjectStatus",
+                session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.RUNNING.name()));
     }
 
     /**
@@ -95,25 +105,37 @@ public class ShellUtil {
      * @return
      * @throws IOException
      */
-    public static boolean javaProjectIsRunning(JavaProjectInfo info) throws IOException {
+    public static boolean javaProjectIsRunning(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
         StringBuilder sb = new StringBuilder();
         sb.append("./shell/java-project/java_project_is_running.sh ")
                 .append(info.getId());
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
 
-        try(InputStream inputStream = process.getInputStream()) {
-            String out = IOUtils.toString(inputStream, "UTF-8");
-            return !out.isEmpty();
-        }
+        Executor executor = new DefaultExecutor();
+        executor.setExitValues(null);
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
+
+        executor.setStreamHandler(streamHandler);
+        executor.execute(CommandLine.parse(sb.toString()));
+
+        return !outputStream.toString().isEmpty();
     }
 
-    public static void killJavaProject(JavaProjectInfo info) throws IOException {
+    public static void killJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
+        if (info.getStatus() != JavaProjectStatus.RUNNING) {
+            return;
+        }
+
         StringBuilder sb = new StringBuilder();
         sb.append("./shell/java-project/java_project_kill.sh ")
                 .append(info.getId());
-        String command = sb.toString();
-        Process process = Runtime.getRuntime().exec(command);
+        Executor executor = new DefaultExecutor();
+        executor.setExitValues(null);
+
+        executor.execute(CommandLine.parse(sb.toString()));
+
+        jmsTemplate.send("javaProjectStatus",
+                session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.STOP.name()));
     }
 
     public static String getDeployedLog(JavaProjectInfo info) throws IOException {

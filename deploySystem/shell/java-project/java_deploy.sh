@@ -4,7 +4,7 @@
 # parameters
 # $1: id of project
 # $2: git url
-# $3: root path
+# $3: root path(relative to initial path)
 
 echo "rm -rf codes/deploy/$1"
 rm -rf codes/deploy/$1
@@ -14,6 +14,7 @@ mkdir -p codes/deploy/$1
 
 cd codes/deploy/$1
 git clone $2
+cd ../../..
 cd $3
 
 echo "mvn clean package"

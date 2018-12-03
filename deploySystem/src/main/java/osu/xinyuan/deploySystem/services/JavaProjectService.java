@@ -1,7 +1,7 @@
 package osu.xinyuan.deploySystem.services;
 
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
-import osu.xinyuan.deploySystem.repositories.JavaProjectStatus;
+import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 import osu.xinyuan.deploySystem.util.DeployFailureException;
 
 import java.io.IOException;

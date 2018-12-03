@@ -25,11 +25,12 @@ public class JavaProjectInfo {
     @Column(name = "MAIN_NAME")
     private String mainName;
 
-    @Column(name = "IS_DEPLOYED")
-    private boolean isDeployed;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "STATUS")
+    private JavaProjectStatus status;
 
     public JavaProjectInfo() {
-        isDeployed = false;
+        this.status = JavaProjectStatus.UNDEPLOYED;
     }
 
     public int getId() {
@@ -80,24 +81,11 @@ public class JavaProjectInfo {
         this.name = name;
     }
 
-    public boolean getIsDeployed() {
-        return isDeployed;
+    public JavaProjectStatus getStatus() {
+        return status;
     }
 
-    public void setIsDeployed(boolean deployed) {
-        isDeployed = deployed;
-    }
-
-    @Override
-    public String toString() {
-        return "JavaProjectInfo{" +
-                "id=" + id +
-                ", name='" + name + '\'' +
-                ", description='" + description + '\'' +
-                ", url='" + url + '\'' +
-                ", rootPath='" + rootPath + '\'' +
-                ", mainName='" + mainName + '\'' +
-                ", isDeployed=" + isDeployed +
-                '}';
+    public void setStatus(JavaProjectStatus status) {
+        this.status = status;
     }
 }
