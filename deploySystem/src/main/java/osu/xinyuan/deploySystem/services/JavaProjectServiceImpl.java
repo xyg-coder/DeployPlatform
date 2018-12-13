@@ -8,7 +8,6 @@ import org.springframework.stereotype.Service;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
 import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
 import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
-import osu.xinyuan.deploySystem.util.DeployFailureException;
 import osu.xinyuan.deploySystem.util.ShellUtil;
 import osu.xinyuan.deploySystem.util.Util;
 
@@ -60,11 +59,10 @@ public class JavaProjectServiceImpl implements JavaProjectService {
     /**
      * deploy the project in the database, delete existed files if already deployed
      * @param id
-     * @throws DeployFailureException DeployFailure
      * @throws IOException something unknown happens
      */
     @Override
-    public void deploy(int id) throws DeployFailureException, IOException {
+    public void deploy(int id) throws IOException {
         JavaProjectInfo info = javaProjectInfoRepo.findById(id);
         if (info == null) {
             logger.error("deploy", "no such info");
@@ -73,8 +71,6 @@ public class JavaProjectServiceImpl implements JavaProjectService {
 
 
         ShellUtil.deployJavaProject(info, jmsTemplate);
-        info.setStatus(JavaProjectStatus.DEPLOYED);
-        javaProjectInfoRepo.save(info);
     }
 
     /**
@@ -171,17 +167,10 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         start(id);
     }
 
-    /**
-     * update with the latest code. deploy
-     * @param id
-     * @throws IOException
-     */
     @Override
-    public void update(int id) throws DeployFailureException, IOException {
-        deploy(id);
-    }
-
-    public void setJmsTemplate(JmsTemplate jmsTemplate) {
-        this.jmsTemplate = jmsTemplate;
+    public void updateStatus(int id, JavaProjectStatus status) {
+        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
+        info.setStatus(status);
+        javaProjectInfoRepo.save(info);
     }
 }

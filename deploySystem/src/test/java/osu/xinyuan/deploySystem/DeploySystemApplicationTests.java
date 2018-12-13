@@ -1,12 +1,9 @@
 package osu.xinyuan.deploySystem;
 
 import org.apache.commons.io.IOUtils;
-import org.eclipse.jgit.api.LsRemoteCommand;
-import org.eclipse.jgit.api.errors.InvalidRemoteException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
@@ -15,22 +12,16 @@ import org.springframework.test.context.junit4.SpringRunner;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
 import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
-import osu.xinyuan.deploySystem.util.DeployFailureException;
 import osu.xinyuan.deploySystem.util.ShellUtil;
 import osu.xinyuan.deploySystem.util.Util;
 
-
-import javax.jms.JMSException;
-import javax.jms.TextMessage;
-import javax.xml.soap.Text;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
@@ -83,7 +74,7 @@ public class DeploySystemApplicationTests {
 	}
 
 	@Test
-	public void testPackageFile() throws IOException, DeployFailureException {
+	public void testPackageFile() throws IOException {
 		JavaProjectInfo info = new JavaProjectInfo();
 		info.setId(11);
 		info.setUrl("https://github.com/xinyuangui2/test.git");
@@ -104,7 +95,7 @@ public class DeploySystemApplicationTests {
 	}
 
 	@Test
-	public void testDeployLogAndRunningLog() throws IOException, DeployFailureException {
+	public void testDeployLogAndRunningLog() throws IOException {
 		JavaProjectInfo info = new JavaProjectInfo();
 		info.setId(11);
 		info.setUrl("https://github.com/xinyuangui2/test.git");

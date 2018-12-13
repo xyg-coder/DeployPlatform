@@ -1,5 +1,5 @@
 package osu.xinyuan.deploySystem.domains;
 
 public enum JavaProjectStatus {
-    UNDEPLOYED, DEPLOYED, RUNNING, STOP
+    UNDEPLOYED, DEPLOYING, DEPLOY_FAIL, DEPLOYED, RUNNING, STOP
 }

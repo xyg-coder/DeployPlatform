@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import osu.xinyuan.deploySystem.services.JavaProjectService;
-import osu.xinyuan.deploySystem.util.DeployFailureException;
 
 @Controller
 @RequestMapping("/java-project")
@@ -24,10 +23,6 @@ public class JavaProjectController {
             return ResponseEntity
                     .status(HttpStatus.OK)
                     .body("start depolying");
-        } catch (DeployFailureException e) {
-            return ResponseEntity
-                    .status(HttpStatus.BAD_REQUEST)
-                    .body("Deploy failure");
         } catch (Exception e) {
             e.printStackTrace();
             return ResponseEntity

@@ -44,11 +44,10 @@ public class ShellUtil {
     /**
      * try to deploy the project
      * should be called after the check of url
-     * If deployed success, will send message to server
+     * If deployed success or fail, will send message to server
      * @param info
-     * @throws DeployFailureException
      */
-    public static void deployJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws DeployFailureException, IOException {
+    public static void deployJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
         String rootPath = Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath()).toString();
 
         StringBuilder sb = new StringBuilder();
@@ -57,18 +56,18 @@ public class ShellUtil {
                 .append(info.getUrl()).append(" ")
                 .append(rootPath);
 
+        JavaProjectExecuteBinaryResultHandler deployHandler =
+                new JavaProjectExecuteBinaryResultHandler(info.getId(), JavaProjectStatus.DEPLOYED,
+                        JavaProjectStatus.DEPLOY_FAIL, jmsTemplate);
+
         ExecuteWatchdog watchdog = new ExecuteWatchdog(60*1000);
         Executor executor = new DefaultExecutor();
         executor.setWatchdog(watchdog);
 
-        int exitValue = executor.execute(CommandLine.parse(sb.toString()));
+        executor.execute(CommandLine.parse(sb.toString()), deployHandler);
 
-        if (exitValue == 1) {
-            throw new DeployFailureException();
-        } else {
-            jmsTemplate.send("javaProjectStatus",
-                    session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.DEPLOYED.name()));
-        }
+        jmsTemplate.send("javaProjectStatus",
+                session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.DEPLOYING.name()));
     }
 
     /**
@@ -87,7 +86,7 @@ public class ShellUtil {
                 .append(info.getMainName());
 
         JavaProjectExecuteResultHandler handler =
-                new JavaProjectExecuteResultHandler(info.getId(), JavaProjectStatus.STOP);
+                new JavaProjectExecuteResultHandler(info.getId(), JavaProjectStatus.STOP, jmsTemplate);
 
         ExecuteWatchdog watchdog = new ExecuteWatchdog(120 * 1000);
         Executor executor = new DefaultExecutor();

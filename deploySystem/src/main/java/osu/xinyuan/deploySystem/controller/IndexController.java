@@ -91,6 +91,8 @@ public class IndexController {
     public void receiveJMS(String msg) {
         logger.info("receiveJMS get msg: " + msg);
 
+        Util.IdAndJavaStatus idAndJavaStatus = Util.parseStr(msg);
+        javaProjectService.updateStatus(idAndJavaStatus.id, idAndJavaStatus.javaProjectStatus);
         simpMessagingTemplate.convertAndSend("/topic/status-change", msg);
     }
 }
