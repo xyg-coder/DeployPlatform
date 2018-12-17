@@ -14,21 +14,25 @@
 </head>
 <body>
 
-<div>
+<div class="container">
     <h2>Java Project List</h2>
 
-    <table th:if="${!#lists.isEmpty(javaProjects)}">
-        <tr>
-            <th>Name</th>
-            <th>Status</th>
-        </tr>
-        <tr data-th-each="info : ${javaProjects}">
-            <td><a href="" th:href="@{/project-detail(projectId=${info.id})}" th:text="${info.name}"></a></td>
-            <td><span th:text="${info.status}" th:id="'javaProject-' + ${info.id}"></span></td>
-        </tr>
+    <table th:if="${!#lists.isEmpty(javaProjects)}" class="table">
+        <thead>
+            <tr>
+                <th scope="col">Name</th>
+                <th scope="col">Status</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr data-th-each="info : ${javaProjects}" scope="row">
+                <td><a href="" th:href="@{'/java-project/' + ${info.id}}" th:text="${info.name}"></a></td>
+                <td><span th:text="${info.status}" th:id="'javaProject-' + ${info.id}"></span></td>
+            </tr>
+        </tbody>
     </table>
 
-    <button><a href="" th:href="@{/new-java-project}">Add Java Project</a></button>
+    <a href="" th:href="@{/new-java-project}" class="btn btn-primary btn-lg btn-block" role="button" aria-pressed="true">Add Java Project</a>
 </div>
 
 <script th:inline="javascript">
@@ -36,7 +40,7 @@
 
     var stompClient = null;
 
-    // connect to the websocket
+    // connect to the logWebsocket
     function connect() {
         var socket = new SockJS('/project-status-websocket');
         stompClient = Stomp.over(socket);
@@ -54,7 +58,7 @@
         });
     }
 
-    // disconnect to the websocket
+    // disconnect to the logWebsocket
     function disconnect() {
         if (stompClient !== null) {
             stompClient.disconnect();

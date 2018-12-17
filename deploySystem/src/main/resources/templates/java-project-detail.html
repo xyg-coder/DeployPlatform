@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Java project Detail</title>
+    <link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+    <script src="/webjars/jquery/jquery.min.js"></script>
+    <script src="/webjars/bootstrap/js/bootstrap.min.js"></script>
+</head>
+<body>
+<div class="container">
+    <form action="update-java-project" th:action="@{'/java-project/' + ${javaProject.id}}"
+          th:object="${javaProject}" method="post">
+        <input id="javaProjectId" type="hidden" name="id" th:field="*{id}"/>
+        <input id="javaProjectStatus" type="hidden" name="status" th:field="*{status}"/>
+        <div class="form-group">
+            <label for="name">Name:</label>
+            <div class="input-group">
+                <input type="text" id="name" name="name" th:field="*{name}" class="form-control"
+                       required readonly>
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="nameEdit">Edit</button>
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <div class="input-group">
+                <input type="text" id="description" name="description" th:field="*{description}" class="form-control"
+                       aria-describedby="basic-addon2" required readonly>
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="descriptionEdit">Edit</button>
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="url">Url:</label>
+            <input type="url" id="url" name="url" class="form-control" th:field="*{url}" required readonly>
+        </div>
+        <div class="form-group">
+            <label for="rootPath">Root path:</label>
+            <div class="input-group">
+                <input type="text" id="rootPath" name="rootPath" th:field="*{rootPath}" class="form-control"
+                       required readonly>
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="rootPathEdit">Edit</button>
+                </span>
+            </div>
+        </div>
+        <div class="form-group">
+            <label for="mainName">Main Name:</label>
+            <div class="input-group">
+                <input type="text" id="mainName" name="mainName" th:field="*{mainName}" class="form-control"
+                       required readonly>
+                <span class="input-group-btn">
+                    <button class="btn btn-default" type="button" id="mainNameEdit">Edit</button>
+                </span>
+            </div>
+        </div>
+        <input type="submit" class="btn btn-primary" value="Submit Update" id="updateSubmit" disabled>
+    </form>
+
+    <div class="form-group">
+        <label for="status">Status:</label>
+        <div class="input-group">
+            <input type="text" id="status" th:value="${javaProject.status}" class="form-control"
+                   required readonly>
+        </div>
+    </div>
+
+    <button class="btn btn-primary" type="button" id="deployBtn">Deploy</button>
+    <button class="btn btn-info" type="button" id="deployLogBtn" data-toggle="modal" data-target="#deployLogModal">Deploy Log</button>
+    <button class="btn btn-primary" type="button" id="runBtn">Run</button>
+    <button class="btn btn-primary" type="button" id="stopRunBtn">Stop Run</button>
+    <button class="btn btn-info" type="button" id="runLogBtn" data-toggle="modal" data-target="#runningLogModal">Running Log</button>
+
+    <button type="button" class="btn btn-danger btn-lg btn-block" style="margin-top: 10px;" data-toggle="modal" data-target="#confirm-delete"
+            id="deleteBtn">Delete</button>
+
+    <!-- Deploy Log Modal -->
+    <div class="modal fade" id="deployLogModal" tabindex="-1" role="dialog" aria-labelledby="deployLogModalTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="deployLogModalTitle">Deploy Log</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="deployLogData">
+                    <div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Running Log Modal -->
+    <div class="modal fade" id="runningLogModal" tabindex="-1" role="dialog" aria-labelledby="runningLogModalTitle" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="runningLogModalTitle">Running Log</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body" id="runningLogData">
+                    <div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- confirm delete modal -->
+    <div class="modal fade" id="confirm-delete" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    Delete Java Project
+                </div>
+                <div class="modal-body">
+                    Do you confirm delete this java project?
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+                    <a class="btn btn-danger btn-ok" id="deleteConfirm">Delete</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<script th:inline="javascript">
+    /*<![CDATA[*/
+
+    function disableBtns(buttonIds) {
+        for (var i in buttonIds) {
+            console.log(buttonIds[i]);
+            $('#' + buttonIds[i]).prop('disabled', true);
+        }
+    }
+
+    function enableBtns(buttonIds) {
+        for (var i in buttonIds) {
+            $('#' + buttonIds[i]).prop('disabled', false);
+        }
+    }
+
+    /**
+     * use the current status to make buttons disabled or not
+     * if deploying, can only stop deploying or deployLog
+     * if running, can only stop running or runLog
+     * if press deploy/run, disable deploy&run in 5 seconds (considering the time of the request sent)
+     */
+    function setButtonsStatus() {
+        var projectStatus = $('#status').val();
+        if (projectStatus === "UNDEPLOYED" || projectStatus === "DEPLOY_FAIL") {
+            enableBtns(["deployBtn", "deployLogBtn"]);
+            disableBtns(["runBtn", "stopRunBtn", "runLogBtn"]);
+        } else if (projectStatus === "DEPLOYING") {
+            enableBtns(["deployLogBtn"]);
+            disableBtns(["deployBtn", "runBtn", "stopRunBtn", "runLogBtn", "deleteBtn", "deleteConfirm"]);
+        } else if (projectStatus === "RUNNING") {
+            enableBtns(["stopRunBtn", "runLogBtn", "deployLogBtn"]);
+            disableBtns(["deployBtn", "runBtn", "deleteBtn", "deleteConfirm"]);
+        } else if (projectStatus === "DEPLOYED") {
+            disableBtns(["stopRunBtn"]);
+            enableBtns(["deployBtn", "deployLogBtn", "runBtn", "runLogBtn"]);
+        } else {
+            enableBtns(["deployBtn", "deployLogBtn", "runBtn", "stopRunBtn", "runLogBtn", "deleteBtn", "deleteConfirm"]);
+        }
+    }
+
+    /**
+     * if some button is clicked, call this function
+     * make input not readonly
+     * make submit button not disabled
+     */
+    function editButtonClick(inputId) {
+        $('#' + inputId).attr("readonly", false);
+        $('#updateSubmit').attr('disabled', false);
+    }
+
+    /**
+     * get project status with ajax
+     * this function will be called every several seconds
+     * considering later there will be many projects
+     * use frequent api call instead of websocket here
+     */
+    function getStatus() {
+        var id = parseInt($('#javaProjectId').val(), 10);
+        $.ajax({
+            url: '/java-project/status',
+            data: {
+                'id': id
+            },
+        }).done(function (response) {
+            console.log('get status success', response);
+            $('#status').val(response);
+            setButtonsStatus();
+        }).fail(function (data) {
+            alert(data.responseText);
+        });
+    }
+
+    function updateStatus(action, id) {
+        disableBtns(["deployLogBtn", "runBtn", "stopRunBtn", "runLogBtn", "deployBtn"]);
+        $.ajax({
+            url: '/java-project/status',
+            data: {
+                'id': id,
+                'action': action
+            },
+            type: 'PUT',
+        }).done(function (response) {
+            getStatus();
+        }).fail(function (data) {
+            alert(data.responseText);
+        });
+    }
+
+    $(function () {
+        getStatus();
+        setInterval(function () {
+            getStatus();
+        }, 5000);
+        $('#nameEdit').click(function () {
+            editButtonClick('name');
+        });
+        $('#descriptionEdit').click(function() {
+            editButtonClick('description');
+        });
+        $('#rootPathEdit').click(function () {
+            editButtonClick('rootPath');
+        });
+        $('#mainNameEdit').click(function () {
+            editButtonClick('mainName');
+        });
+
+        var id = parseInt($('#javaProjectId').val(), 10);
+
+        $('#deployBtn').click(function () {
+            updateStatus('deploy', id);
+        });
+
+        $('#runBtn').click(function () {
+            updateStatus('run', id);
+        });
+
+        $('#stopRunBtn').click(function () {
+            updateStatus('stopRun', id);
+        });
+
+        $('#deleteConfirm').click(function () {
+            $.ajax({
+                type: "DELETE",
+                url: `/java-project/${id}`,
+            }).done(function (response) {
+                window.location = '/';
+            }).fail(function (data) {
+                alert(data.responseText);
+            });
+        });
+
+        var deployLogWebsocket;
+        var runningLogWebsocket;
+        $('#deployLogModal').on('show.bs.modal', function (e) {
+            var url = `ws://${window.location.host}/log?projectType=javaProject&id=${id}&logType=deploy`;
+            $("#deployLogData>div").html("");
+            deployLogWebsocket = new WebSocket(url);
+            deployLogWebsocket.onmessage = function (ev) {
+                var msg = ev.data;
+                $("#deployLogData>div").append(msg);
+            };
+        });
+
+        $('#deployLogModal').on('hide.bs.modal', function (e) {
+            deployLogWebsocket.close();
+        });
+
+        $('#runningLogModal').on('show.bs.modal', function (e) {
+            var url = `ws://${window.location.host}/log?projectType=javaProject&id=${id}&logType=running`;
+            $("#runningLogData>div").html("");
+            runningLogWebsocket = new WebSocket(url);
+            runningLogWebsocket.onmessage = function (ev) {
+                var msg = ev.data;
+                $("#runningLogData>div").append(msg);
+            };
+        });
+
+        $('#runningLogModal').on('hide.bs.modal', function (e) {
+            runningLogWebsocket.close();
+        });
+
+    });
+
+    /*]]>*/
+</script>
+</body>
+</html>

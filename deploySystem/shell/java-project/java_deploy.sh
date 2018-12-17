@@ -15,12 +15,18 @@ mkdir -p codes/deploy/$1
 cd codes/deploy/$1
 git clone $2
 cd ../../..
+if [ ! -d $3 ]; then
+    mkdir $3
+    cd $3
+    > package_log.log echo "build fail, the path is wrong"
+    exit 1
+fi
 cd $3
 
 echo "mvn clean package"
 mvn -Djar.finalName=uidIs$1 clean package > package_log.log
 
-if ! [ -a target/uidIs$1.jar ]; then
-    >&2 echo "build fail"
+if ! [ -f target/uidIs$1.jar ]; then
+    > package_log.log echo "build fail"
     exit 1
 fi

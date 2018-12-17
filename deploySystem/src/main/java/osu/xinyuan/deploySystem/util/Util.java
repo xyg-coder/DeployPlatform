@@ -5,6 +5,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class Util {
 
     private static Logger logger = LoggerFactory.getLogger(Util.class);
@@ -45,5 +48,17 @@ public class Util {
             this.id = id;
             this.javaProjectStatus = status;
         }
+    }
+
+    public static Map<String, String> queryStringParse(String query) {
+        Map<String, String> result = new HashMap<>();
+        String[] splits = query.split("&");
+        for (String split : splits) {
+            String[] eqs = split.split("=");
+            if (eqs.length > 1) {
+                result.put(eqs[0], eqs[1]);
+            }
+        }
+        return result;
     }
 }

@@ -8,16 +8,19 @@ import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.config.DefaultJmsListenerContainerFactory;
 import org.springframework.jms.config.JmsListenerContainerFactory;
 import org.springframework.messaging.simp.config.MessageBrokerRegistry;
-import org.springframework.web.socket.config.annotation.EnableWebSocketMessageBroker;
-import org.springframework.web.socket.config.annotation.StompEndpointRegistry;
-import org.springframework.web.socket.config.annotation.WebSocketMessageBrokerConfigurer;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.web.socket.config.annotation.*;
+import osu.xinyuan.deploySystem.logWebsocket.LogWebsocketHandler;
 
 import javax.jms.ConnectionFactory;
 
 @SpringBootApplication
 @EnableJms
 @EnableWebSocketMessageBroker
-public class DeploySystemApplication implements WebSocketMessageBrokerConfigurer {
+@EnableAsync
+@EnableWebSocket
+public class DeploySystemApplication implements WebSocketMessageBrokerConfigurer, WebSocketConfigurer {
 
 	/**
 	 * configure the jms
@@ -33,8 +36,18 @@ public class DeploySystemApplication implements WebSocketMessageBrokerConfigurer
 		return factory;
 	}
 
+	@Bean
+	public ThreadPoolTaskExecutor taskExecutor() {
+		ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
+		executor.setCorePoolSize(2);
+		executor.setMaxPoolSize(2);
+		executor.setQueueCapacity(500);
+		executor.initialize();
+		return executor;
+	}
+
 	/**
-	 * configure the websocket
+	 * configure the Websocket
 	 * @param config
 	 */
 	@Override
@@ -44,10 +57,20 @@ public class DeploySystemApplication implements WebSocketMessageBrokerConfigurer
 
 	@Override
 	public void registerStompEndpoints(StompEndpointRegistry registry) {
-		registry.addEndpoint("/project-status-websocket").withSockJS();
+        registry.addEndpoint("/project-status-websocket").withSockJS();
 	}
 
 	public static void main(String[] args) {
 		SpringApplication.run(DeploySystemApplication.class, args);
+	}
+
+	@Override
+	public void registerWebSocketHandlers(WebSocketHandlerRegistry webSocketHandlerRegistry) {
+		webSocketHandlerRegistry.addHandler(logHandler(), "/log");
+	}
+
+	@Bean
+	public LogWebsocketHandler logHandler() {
+		return new LogWebsocketHandler();
 	}
 }

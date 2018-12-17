@@ -6,8 +6,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.stereotype.Service;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
-import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
 import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
+import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
 import osu.xinyuan.deploySystem.util.ShellUtil;
 import osu.xinyuan.deploySystem.util.Util;
 
@@ -37,6 +37,17 @@ public class JavaProjectServiceImpl implements JavaProjectService {
     @Override
     public List<JavaProjectInfo> getAllJavaProjects() {
         return javaProjectInfoRepo.findAll();
+    }
+
+    @Override
+    public JavaProjectInfo getJavaProjectById(int id) {
+        return javaProjectInfoRepo.findById(id);
+    }
+
+    @Override
+    public JavaProjectInfo update(JavaProjectInfo info) {
+        javaProjectInfoRepo.save(info);
+        return info;
     }
 
     /**
@@ -74,23 +85,6 @@ public class JavaProjectServiceImpl implements JavaProjectService {
     }
 
     /**
-     * get deployLog
-     * @param id
-     * @return
-     * @throws IOException not deployed yet or something unknown happens
-     */
-    @Override
-    public String getDeployLog(int id) throws IOException {
-        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
-        if (info == null) {
-            logger.error("getDeployLog", "no such info");
-            throw new IOException("no such info");
-        }
-
-        return ShellUtil.getDeployedLog(info);
-    }
-
-    /**
      * start one javaproject
      * @param id
      * @throws IOException not deployed yet or something unknown happens
@@ -104,23 +98,6 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         }
 
         ShellUtil.startJavaProject(info, jmsTemplate);
-    }
-
-    /**
-     * get the log of one java project
-     * @param id
-     * @return
-     * @throws IOException no such log or something unknown happens
-     */
-    @Override
-    public String getRunningLog(int id) throws IOException {
-        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
-        if (info == null) {
-            logger.error("getRunningLog", "no such info");
-            throw new IOException("no such info");
-        }
-
-        return ShellUtil.getRunningLog(info);
     }
 
     /**
@@ -156,21 +133,40 @@ public class JavaProjectServiceImpl implements JavaProjectService {
         return javaProjectInfoRepo.findById(id).getStatus();
     }
 
-    /**
-     * stop if the project is running. start later
-     * @param id
-     * @throws IOException
-     */
-    @Override
-    public void restart(int id) throws IOException {
-        stop(id);
-        start(id);
-    }
-
     @Override
     public void updateStatus(int id, JavaProjectStatus status) {
         JavaProjectInfo info = javaProjectInfoRepo.findById(id);
         info.setStatus(status);
         javaProjectInfoRepo.save(info);
+    }
+
+    @Override
+    public Process getDeployLogProcess(int id) throws IOException {
+        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
+        return ShellUtil.readJavaDeployLogDynamically(info);
+    }
+
+    @Override
+    public Process getRunningLogProcess(int id) throws IOException {
+        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
+        return ShellUtil.readJavaRunningLogDynamically(info);
+    }
+
+    @Override
+    public String[] killDeployLogProcessCommand(int id) {
+        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
+        return ShellUtil.killJavaDeployLogProcessCommand(info);
+    }
+
+    @Override
+    public String[] killRunningLogProcessCommand(int id) {
+        JavaProjectInfo info = javaProjectInfoRepo.findById(id);
+        return ShellUtil.killJavaRunningLogProcessCommand(info);
+    }
+
+    @Override
+    public void delete(int id) throws IOException {
+        javaProjectInfoRepo.deleteById(id);
+        ShellUtil.deleteJavaProject(id);
     }
 }

@@ -17,31 +17,6 @@ public class ShellUtil {
     private static Logger logger = LoggerFactory.getLogger(ShellUtil.class);
 
     /**
-     * get the text of one file, can be used to read the log
-     * @param path
-     * @return
-     * @throws IOException
-     */
-    private static String getTxtFile(String path) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        if (!(new File(path)).exists()) {
-            throw new IOException("No such file");
-        }
-        sb.append("./shell/read_file.sh ").append(path);
-
-        CommandLine commandLine = CommandLine.parse(sb.toString());
-        DefaultExecutor executor = new DefaultExecutor();
-        executor.setExitValues(null);
-
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-        executor.setStreamHandler(streamHandler);
-        executor.execute(commandLine);
-
-        return outputStream.toString();
-    }
-
-    /**
      * try to deploy the project
      * should be called after the check of url
      * If deployed success or fail, will send message to server
@@ -85,8 +60,8 @@ public class ShellUtil {
                 .append(rootPath).append(" ")
                 .append(info.getMainName());
 
-        JavaProjectExecuteResultHandler handler =
-                new JavaProjectExecuteResultHandler(info.getId(), JavaProjectStatus.STOP, jmsTemplate);
+        JavaProjectExecuteBinaryResultHandler handler =
+                new JavaProjectExecuteBinaryResultHandler(info.getId(), JavaProjectStatus.STOP, JavaProjectStatus.STOP, jmsTemplate);
 
         ExecuteWatchdog watchdog = new ExecuteWatchdog(120 * 1000);
         Executor executor = new DefaultExecutor();
@@ -96,28 +71,6 @@ public class ShellUtil {
 
         jmsTemplate.send("javaProjectStatus",
                 session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.RUNNING.name()));
-    }
-
-    /**
-     * return true if the corresponding javaProject is running now
-     * @param info
-     * @return
-     * @throws IOException
-     */
-    public static boolean javaProjectIsRunning(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
-        StringBuilder sb = new StringBuilder();
-        sb.append("./shell/java-project/java_project_is_running.sh ")
-                .append(info.getId());
-
-        Executor executor = new DefaultExecutor();
-        executor.setExitValues(null);
-        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
-        PumpStreamHandler streamHandler = new PumpStreamHandler(outputStream);
-
-        executor.setStreamHandler(streamHandler);
-        executor.execute(CommandLine.parse(sb.toString()));
-
-        return !outputStream.toString().isEmpty();
     }
 
     public static void killJavaProject(JavaProjectInfo info, JmsTemplate jmsTemplate) throws IOException {
@@ -137,19 +90,84 @@ public class ShellUtil {
                 session -> session.createTextMessage("javaProject-" + info.getId() + "=" + JavaProjectStatus.STOP.name()));
     }
 
-    public static String getDeployedLog(JavaProjectInfo info) throws IOException {
+    /**
+     * read one file dynamically, return the process for reading
+     * caller is responsible for closing the process
+     * @param filePath
+     * @return
+     */
+    public static Process readFileDynamically(String filePath) throws IOException {
+        File file = new File(filePath);
+        if (!file.exists() || file.isDirectory()) {
+            throw new IOException("No such path to read");
+        }
+        String command = "./shell/read_file_dynamic.sh " + filePath;
+        return Runtime.getRuntime().exec(command);
+    }
+
+    /**
+     * read java project deploy log dynamically
+     * caller is responsible for closing the process
+     * @param info
+     * @return
+     * @throws IOException
+     */
+    public static Process readJavaDeployLogDynamically(JavaProjectInfo info) throws IOException {
         String path =
                 Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "package_log.log")
                         .toString();
-
-        return getTxtFile(path);
+        return readFileDynamically(path);
     }
 
-    public static String getRunningLog(JavaProjectInfo info) throws IOException {
+    /**
+     * read java project running log dynamically
+     * caller is responsible for closing the process
+     * @param info
+     * @return
+     * @throws IOException
+     */
+    public static Process readJavaRunningLogDynamically(JavaProjectInfo info) throws IOException {
         String path =
                 Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "nohup.out")
                         .toString();
 
-        return getTxtFile(path);
+        return readFileDynamically(path);
+    }
+
+    /**
+     * return the command to kill the process that dynamically read the deploy log
+     * @param info
+     * @return
+     */
+    public static String[] killJavaDeployLogProcessCommand(JavaProjectInfo info) {
+        String path =
+                Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "package_log.log")
+                        .toString();
+        return new String[]{"./shell/kill_with_command.sh", "tail", "-f", "-n", "500", path};
+    }
+
+    /**
+     * return the Process to kill the process dynamically reading the running log
+     * @param info
+     * @return
+     */
+    public static String[] killJavaRunningLogProcessCommand(JavaProjectInfo info) {
+        String path =
+                Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "nohup.out")
+                        .toString();
+        return new String[]{"./shell/kill_with_command.sh", "tail", "-f", "-n", "500", path};
+    }
+
+    /**
+     * delete all the files of java project with given id
+     * @param id
+     */
+    public static void deleteJavaProject(int id) throws IOException{
+        try {
+            new ProcessBuilder("./shell/java-project/java_project_delete.sh", Integer.toString(id)).start().waitFor();
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+            logger.error(e.getMessage());
+        }
     }
 }

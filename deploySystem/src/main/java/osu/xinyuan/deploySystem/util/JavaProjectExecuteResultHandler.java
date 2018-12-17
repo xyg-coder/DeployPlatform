@@ -56,7 +56,6 @@ public class JavaProjectExecuteResultHandler extends DefaultExecuteResultHandler
         super.onProcessFailed(e);
 
         logger.error("Process Failed");
-
     }
 
     public JmsTemplate getJmsTemplate() {

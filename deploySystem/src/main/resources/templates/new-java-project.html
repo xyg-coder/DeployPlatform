@@ -10,29 +10,32 @@
 
 </head>
 <body>
-<form action="new-java-project" th:action="@{~/new-java-project}" id="ajax-contact" method="post">
-    <div>
-        <lable for="name">Name:</lable>
-        <input type="text" id="name" name="name" required>
-    </div>
-    <div>
-        <label for="description">Description:</label>
-        <input type="text" id="description" name="description" required>
-    </div>
-    <div>
-        <label for="url">Url:</label>
-        <input type="url" id="url" name="url" required>
-    </div>
-    <div>
-        <label for="rootPath">Root path:</label>
-        <input type="text" id="rootPath" name="rootPath" required>
-    </div>
-    <div>
-        <label for="mainName">Main Name:</label>
-        <input type="text" id="mainName" name="mainName" required>
-    </div>
-    <input type="submit" value="Create java project">
-</form>
+<div class="container">
+    <form action="new-java-project" th:action="@{~/new-java-project}" id="ajax-contact" method="post"
+    th:object="${newJavaObject}">
+        <div class="form-group">
+            <lable for="name">Name:</lable>
+            <input type="text" id="name" th:field="*{name}" class="form-control" placeholder="Project Name" required>
+        </div>
+        <div class="form-group">
+            <label for="description">Description:</label>
+            <input type="text" id="description" th:field="*{description}" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="url">Url:</label>
+            <input type="url" id="url" th:field="*{url}" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="rootPath">Root path:</label>
+            <input type="text" id="rootPath" th:field="*{rootPath}" class="form-control" required>
+        </div>
+        <div class="form-group">
+            <label for="mainName">Main Name:</label>
+            <input type="text" id="mainName" th:field="*{mainName}" class="form-control" required>
+        </div>
+        <input type="submit" class="btn btn-primary" value="Create java project">
+    </form>
+</div>
 
 
 <script th:inline="javascript">

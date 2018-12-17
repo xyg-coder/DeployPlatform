@@ -9,14 +9,14 @@ import org.springframework.jms.JmsException;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.jms.core.MessageCreator;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.web.util.HtmlUtils;
 import osu.xinyuan.deploySystem.domains.JavaProjectInfo;
 import osu.xinyuan.deploySystem.domains.JavaProjectStatus;
 import osu.xinyuan.deploySystem.repositories.JavaProjectInfoRepo;
 import osu.xinyuan.deploySystem.util.ShellUtil;
 import osu.xinyuan.deploySystem.util.Util;
 
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
@@ -84,15 +84,6 @@ public class DeploySystemApplicationTests {
 //		ShellUtil.startJavaProject(info);
 	}
 
-	@Test
-	public void testIsRunning() throws IOException {
-		JavaProjectInfo info = new JavaProjectInfo();
-		info.setId(11);
-		info.setUrl("https://github.com/xinyuangui2/test.git");
-		info.setRootPath("test/my-app/");
-		info.setMainName("com.mycompany.app.App");
-		assertTrue(ShellUtil.javaProjectIsRunning(info, new MockJmsTemplate()));
-	}
 
 	@Test
 	public void testDeployLogAndRunningLog() throws IOException {
@@ -105,8 +96,8 @@ public class DeploySystemApplicationTests {
 		ShellUtil.deployJavaProject(info, new MockJmsTemplate());
 //		ShellUtil.startJavaProject(info);
 
-		String deployedLog = ShellUtil.getDeployedLog(info);
-		System.out.println(">>> deployedlog\n" + deployedLog);
+//		String deployedLog = ShellUtil.readJavaDeployLogDynamically(info);
+//		System.out.println(">>> deployedlog\n" + deployedLog);
 
 //		String runningLog = ShellUtil.getRunningLog(info);
 //		System.out.println(">>> runninglog\n" + runningLog);
@@ -148,6 +139,33 @@ public class DeploySystemApplicationTests {
 		@Override
 		public void send(String destinationName, MessageCreator messageCreator) throws JmsException {
 			System.out.println(destinationName);
+		}
+	}
+
+	@Test
+	public void testDeployLog() {
+		JavaProjectInfo info = new JavaProjectInfo();
+		info.setId(1);
+		info.setUrl("https://github.com/xinyuangui2/test.git");
+		info.setRootPath("test/my-app/");
+		info.setMainName("com.mycompany.app.App");
+		info.setStatus(JavaProjectStatus.RUNNING);
+
+		String path =
+				Paths.get("codes/deploy/", Integer.toString(info.getId()), info.getRootPath(), "package_log.log")
+						.toString();
+		File f = new File(path);
+		System.out.println(">>> " + path + ", " + f.exists() + ", " + f.isDirectory());
+		try {
+			Process process = ShellUtil.readJavaDeployLogDynamically(info);
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
+            String line;
+            while ((line = reader.readLine()) != null) {
+                System.out.println(HtmlUtils.htmlEscape(line));
+            }
+		} catch (IOException e) {
+		    System.err.println(">>> errors happen");
+			e.printStackTrace();
 		}
 	}
 }
