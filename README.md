@@ -7,6 +7,5 @@
 
 ## TODO:
 
-1. Change the status to execute three status.
-2. Change current command execution to `org.apache.common`. Add some nodes during the command execution to send message to the controller. The controller send message to the html.
-3. Add web-socket to read the log
+1. Use docker to deploy project. Move current functions to docker
+2. Add different roles and authorities.
