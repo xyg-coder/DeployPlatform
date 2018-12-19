@@ -2,10 +2,9 @@
 
 ## Target
 
-1. Finish the basic functions: deploy Python, Java programs online
-2. Use Docker and some other tools to optimize
+1. Support Java, cpp, python sandbox function. User can use this to test algorithms, read & write file.
+2. Support web applications with mysql, mongodb database. We provide users one username and password. User need to provide one way to start this service.
 
-## TODO:
+## Todo
 
-1. Use docker to deploy project. Move current functions to docker
-2. Add different roles and authorities.
+1. Add Sandbox function: select language, upload file, get output and get file materials.
