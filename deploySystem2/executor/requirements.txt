@@ -1,0 +1,4 @@
+Flask
+docker
+rq
+redis
