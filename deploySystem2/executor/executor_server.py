@@ -55,5 +55,5 @@ def run_single_file_code(code_id):
 
 if __name__ == "__main__":
     port = int(sys.argv[1])
-    # app.run(debug=True, threaded=True, port=port, host='0.0.0.0') # with host, can receive public request
-    app.run(debug=True, threaded=True, port=port)
+    app.run(debug=True, threaded=True, port=port, host='0.0.0.0') # with host, can receive public request
+    # app.run(debug=True, threaded=True, port=port)
