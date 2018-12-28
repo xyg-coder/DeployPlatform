@@ -11,11 +11,12 @@ app = Flask(__name__)
 redis_conn = Redis()
 q = Queue(connection=redis_conn)
 
-IMAGE_NAME = config.single_file_impl['java']['image_name']
-GUEST_CODE_PATH = config.single_file_impl['java']['guest_code_path']
-HOST_CODE_PATH = config.single_file_impl['java']['host_code_path']
-FILE_SIZE_LIMIT = config.single_file_impl['java']['file_size_limit']
-TIME_LIMIT = config.single_file_impl['java']['time_limit']
+IMAGE_NAME = config.single_file_impl['image_name']
+GUEST_CODE_PATH = config.single_file_impl['guest_code_path']
+HOST_CODE_PATH = config.single_file_impl['host_code_path']
+FILE_SIZE_LIMIT = config.single_file_impl['file_size_limit']
+TIME_LIMIT = config.single_file_impl['time_limit']
+PORT = config.single_file_impl['port']
 
 
 @app.route("/")
@@ -23,20 +24,22 @@ def hello():
     return "Hello world. This is executor"
 
 
-@app.route("/run-single-file/<code_id>", methods=['GET'])
-def run_single_file_code(code_id):
+@app.route("/run-single-file", methods=['POST'])
+def run_single_file_code():
     """
     run the single file code
     request contain the json, should contain {"type", "stdin"}
     :return:
     """
+    print(request)
     data = request.json
-    if not data or not data['type']:
-        return abort(400, 'should contain type in json')
+    if not data or not data['type'] or not data['code_id']:
+        return abort(400, 'should contain type and code_id in json')
     code_type = data['type']
-    if code_type != 'java':
-        return abort(400, 'currently only support java code')
-
+    if code_type not in ['java', 'cpp', 'python']:
+        return abort(400, 'code type not supported')
+    code_id = data['code_id']
+    script_name = config.single_file_impl['script_name'][code_type]
     stdin = data.get('stdin', '')
     host_code_path = "%s/%s" % (HOST_CODE_PATH, code_id)
     q.enqueue_call(func=build_and_run,
@@ -45,6 +48,7 @@ def run_single_file_code(code_id):
                        code_id,  # code id
                        TIME_LIMIT,  # time limit
                        FILE_SIZE_LIMIT,  # file size limit,
+                       script_name,  # script name
                        host_code_path,  # host path
                        GUEST_CODE_PATH,  # guest code path
                        stdin,  # stdin
@@ -54,6 +58,5 @@ def run_single_file_code(code_id):
 
 
 if __name__ == "__main__":
-    port = int(sys.argv[1])
-    app.run(debug=True, threaded=True, port=port, host='0.0.0.0') # with host, can receive public request
-    # app.run(debug=True, threaded=True, port=port)
+    # app.run(debug=True, threaded=True, port=PORT) # with host, can receive public request
+    app.run(debug=True, threaded=True, port=8080, host='0.0.0.0')

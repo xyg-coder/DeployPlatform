@@ -10,7 +10,7 @@ import javax.persistence.*;
  */
 @Entity
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
-public class SingleFileCodeInfo {
+public class SingleFileCode {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
