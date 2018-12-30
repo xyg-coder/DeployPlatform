@@ -7,11 +7,11 @@
                     <div class="layout-nav">
                         <MenuItem name="1">
                             <Icon type="ios-navigate"></Icon>
-                            <router-link to="/single-file-code">Single File Code</router-link>
+                            <router-link class="nav-router-line" to="/single-file-code">Single File Code</router-link>
                         </MenuItem>
                         <MenuItem name="2">
                             <Icon type="ios-keypad"></Icon>
-                            <router-link to="/">Web Code</router-link>
+                            <router-link class="nav-router-line" to="web-code">Web Code</router-link>
                         </MenuItem>
                     </div>
                 </Menu>
@@ -48,6 +48,9 @@
     }
     .layout-footer-center{
         text-align: center;
+    }
+    .nav-router-line {
+        color: white;
     }
 </style>
 

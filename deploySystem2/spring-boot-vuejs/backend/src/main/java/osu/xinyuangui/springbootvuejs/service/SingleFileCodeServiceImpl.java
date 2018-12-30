@@ -4,13 +4,13 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeBrief;
-import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeType;
 import osu.xinyuangui.springbootvuejs.repository.SingleFileCodeRepository;
 import osu.xinyuangui.springbootvuejs.util.FileIO;
 
@@ -30,11 +30,10 @@ public class SingleFileCodeServiceImpl implements SingleFileCodeService {
     @Value("${executor.url}")
     private String executorUrl;
 
-
     @Override
-    public List<SingleFileCodeBrief> getSingleFileCodeInfos() {
+    public List<SingleFileCodeBrief> getSingleFileCodeInfosByPage(Pageable pageable) {
         logger.info("Get Single File Code Infos");
-        return codeRepository.findAllInfos();
+        return codeRepository.findAllInfosByPage(pageable).getContent();
     }
 
     @Override
@@ -79,5 +78,22 @@ public class SingleFileCodeServiceImpl implements SingleFileCodeService {
         String input = String.format("{\"code_id\":\"%s\",\"type\":\"%s\", \"stdin\":\"%s\"}",
                 id, type.toLowerCase(), stdin);
         return input;
+    }
+
+    @Override
+    public Process getFileReadingProcess(int id, String fileName) throws IOException {
+        String destination = String.format("%s/%s/%s", userCodePath, id, fileName);
+        return FileIO.readFileProcess(destination);
+    }
+
+    @Override
+    public String[] getKillFileReadingProcessCommand(int id, String fileName) {
+        String destination = String.format("%s/%s/%s", userCodePath, id, fileName);
+        return FileIO.killFileReadingProcessCommand(destination);
+    }
+
+    @Override
+    public int getTotalCount() {
+        return (int)codeRepository.count();
     }
 }

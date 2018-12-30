@@ -6,8 +6,20 @@
     * Add cpp and python function, finish
 
 * Front end
-    * Add page
+    * List page
+        * Can see the code, finish
+        * Table add link to the detail page, finish
+        * Add page, finish
+        * Search with code name
+    * Detail page
+        * Code Editor
+        * stdin editor
+        * Get file list
+        * Read file
+        * Upload and download file
+    * Save and run function
 
 * Backend server
-    * websocket
+    * websocket, finish
     * Upload and download file
+    * Add pagination, finish

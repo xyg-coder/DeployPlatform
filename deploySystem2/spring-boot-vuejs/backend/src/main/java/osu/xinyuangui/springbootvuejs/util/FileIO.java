@@ -4,6 +4,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -43,5 +44,28 @@ public class FileIO {
         try (FileWriter fileWriter = new FileWriter(dst)) {
             fileWriter.write(code.getCode());
         }
+    }
+
+    /**
+     * read the file dynimically
+     * create the process and return it
+     * @param destination
+     * @return
+     * @throws IOException
+     */
+    public static Process readFileProcess(String destination) throws IOException {
+        File file = new File(destination);
+        if (!file.exists() || file.isDirectory()) {
+            throw new IOException("No such file to read");
+        }
+        String command =
+                "./backend/src/main/java/osu/xinyuangui/springbootvuejs/util/read_file_dynamically.sh "
+                + destination;
+        return Runtime.getRuntime().exec(command);
+    }
+
+    public static String[] killFileReadingProcessCommand(String destination) {
+        return new String[]{"./backend/src/main/java/osu/xinyuangui/springbootvuejs/util/read_file_dynamically.sh ",
+        "tail", "-f", "-n", destination};
     }
 }

@@ -3,6 +3,8 @@ package osu.xinyuangui.springbootvuejs.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -26,14 +28,23 @@ public class SingleFileCodeController {
     @Autowired
     private SingleFileCodeService singleFileCodeService;
 
-    @GetMapping("")
-    public @ResponseBody List<SingleFileCodeBrief> getSingleFileCodeInfos() {
+    @GetMapping(value = "")
+    public @ResponseBody List<SingleFileCodeBrief> getSingleFileCodeInfos(
+            @RequestParam("pageIndex") int pageIndex,
+            @RequestParam("countPerPage") int countPerPage) {
         logger.info("Get Single File Code Infos");
-        return singleFileCodeService.getSingleFileCodeInfos();
+        Pageable pageable = PageRequest.of(pageIndex, countPerPage);
+        return singleFileCodeService.getSingleFileCodeInfosByPage(pageable);
     }
 
-    @GetMapping(value = "", params = "id")
-    public ResponseEntity getSingleFileCode(@RequestParam("id")int id) {
+    @GetMapping("/count")
+    public @ResponseBody int getTotalCount() {
+        logger.info("Get total count of single file codes");
+        return singleFileCodeService.getTotalCount();
+    }
+
+    @GetMapping(value = "/{id}")
+    public ResponseEntity getSingleFileCode(@PathVariable("id")int id) {
         logger.info("Get Single File Code, id=" + id);
         try {
             SingleFileCode code = singleFileCodeService.getSingleFileCodeById(id);
@@ -106,7 +117,7 @@ public class SingleFileCodeController {
         SingleFileCode code = new SingleFileCode();
         code.setId(id);
         code.setType(SingleFileCodeType.JAVA);
-        code.setName("code");
+        code.setName("code " + id);
         code.setDescription("code");
         code.setCode("public class Main {\n" +
                 "    public static void main(String[] args) {\n" +
