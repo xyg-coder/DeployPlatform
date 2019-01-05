@@ -7,9 +7,9 @@ import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.nio.file.*;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -39,11 +39,50 @@ public class FileIO {
         if (Files.notExists(path)) {
             Files.createDirectories(path);
         }
+
+        // delete old files
+        String[] oldFiles = {"Main.java", "Main.class", "main.py", "main.cpp", "single_file_out.out"};
+        for (String oldFile : oldFiles) {
+            String dst = String.format("%s/%s", path.toString(), oldFile);
+            Files.deleteIfExists(Paths.get(dst));
+        }
+
         String fileName = fileNameMap.get(code.getType().name().toLowerCase());
         String dst = String.format("%s/%s", path.toString(), fileName);
         try (FileWriter fileWriter = new FileWriter(dst)) {
             fileWriter.write(code.getCode());
         }
+    }
+
+    /**
+     * delete the code folder
+     * @param code
+     * @param userCodePath
+     * @throws IOException
+     */
+    public static void deleteCodeFolder(SingleFileCode code, String userCodePath) throws IOException {
+        int id = code.getId();
+        Path path = Paths.get(userCodePath, Integer.toString(id));
+        if (Files.notExists(path)) {
+            return;
+        }
+
+        Files.walkFileTree(path, new SimpleFileVisitor<Path>() {
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                Files.delete(file);
+                return FileVisitResult.CONTINUE;
+            }
+
+            @Override
+            public FileVisitResult postVisitDirectory(Path dir, IOException exc) throws IOException {
+                if (exc != null) {
+                    throw exc;
+                }
+                Files.delete(dir);
+                return FileVisitResult.CONTINUE;
+            }
+        });
     }
 
     /**
@@ -65,7 +104,7 @@ public class FileIO {
     }
 
     public static String[] killFileReadingProcessCommand(String destination) {
-        return new String[]{"./backend/src/main/java/osu/xinyuangui/springbootvuejs/util/read_file_dynamically.sh ",
-        "tail", "-f", "-n", destination};
+        return new String[]{"./backend/src/main/java/osu/xinyuangui/springbootvuejs/util/kill_with_command.sh",
+        "tail", "-f", "-n", "500", destination};
     }
 }

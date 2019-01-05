@@ -65,6 +65,8 @@ public class FileReadingWebsocketThread implements Runnable{
             }
 
             logger.error(e.getMessage());
+        } catch (IllegalStateException e) {
+            logger.error(e.getMessage());
         }
     }
 }

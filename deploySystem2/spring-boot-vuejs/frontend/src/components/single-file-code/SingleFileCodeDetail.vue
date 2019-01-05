@@ -1,18 +1,20 @@
 <template>
         <Row type="flex" justify="center" class="code-row-bg">
             <Col span="8">
-                <AceEditor v-model="curStatus.code" @init="editorInit" :lang="editorLang" theme="chrome" width="100%" height="800px"></AceEditor>
+                <Button type="primary" icon="md-refresh" v-on:click="resetCodeToOrigin">Reset To Origin</Button>
+                <Button type="primary" icon="md-refresh" style="margin-left: 10px" v-on:click="curStatus.code=defaultCode[curStatus.type]">Reset To Default</Button>
+                <AceEditor v-model="curStatus.code" @init="editorInit" :lang="editorLang" theme="chrome" width="100%" height="800px" style="margin-top: 10px"></AceEditor>
             </Col>
             <Col span="4">
                 <div>
                     Name:
                     <Input v-model="curStatus.name" placeholder="Enter name" style="width: auto"/>
-                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh"></Button>
+                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh" v-on:click="curStatus.name=originStatus.name"></Button>
                 </div>
                 <div style="margin-top: 20px">
                     Description:
                     <Input v-model="curStatus.description" placeholder="Enter description" type="textarea" style="width: auto" icon="md-refresh" />
-                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh"></Button>
+                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh" v-on:click="curStatus.description=originStatus.description"></Button>
                 </div>
                 <div style="margin-top: 20px">
                     Type:
@@ -21,25 +23,39 @@
                     </Select>
                 </div>
                 <div style="margin-top: 20px">
-                    Stdin:
+                    Stdin:(don't press enter, use escape character)
                     <Input v-model="runStdin" placeholder="Input stdin here" type="textarea" style="width: auto" icon="md-refresh" />
-                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh"></Button>
+                    <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh" v-on:click="runStdin=''"></Button>
                 </div>
                 <div style="margin-top: 20px">
-                    <Button type="success" long> Save </Button>
+                    <Button type="success" :disabled="saveDisabled" long v-on:click="saveUpdate"> Save </Button>
                     <br><br>
-                    <Button type="success" long> Run </Button>
+                    <Button type="success" :disabled="!canRun" long v-on:click="runCode"> Run </Button>
                     <br><br>
-                    <Button type="success" long> Check Result </Button>
+                    <Button type="success" long v-on:click="fileReadModalOpen('result.log', 'Result Log')" :disabled="!canCheckResult"> Check Result </Button>
                     <br><br>
-                    <Button type="error" long> Reset </Button>
+                    <Button type="error" long v-on:click="reset"> Reset All </Button>
                     <br><br>
-                    <Button type="error" long> Delete </Button>
+                    <Button type="error" :disabled="$route.params.id==='new'" v-on:click="deleteConfirmModal=true" long> Delete </Button>
                     <br><br>
                 </div>
             </Col>
             <Col span="4">
             </Col>
+            <Modal v-model="deleteConfirmModal" title="Delete Confirm" :loading="deleting" @on-ok="deleteCode">
+                <p>Are you sure you want to delete this code?</p>
+            </Modal>
+            <Modal v-model="fileReadModal" width="720" :scrollable="true" :closable="false">
+                <p slot="header" style="color:#f60;text-align:center">
+                    <Icon type="ios-information-circle"></Icon>
+                    <span>File Reading Modal</span>
+                </p>
+                <div style="text-align:center" v-html="fileReadModalContent">
+                </div>
+                <div slot="footer">
+                    <Button type="info" size="large" long @click="fileReadModalClose">Close</Button>
+                </div>
+            </Modal>
         </Row>
 </template>
 
@@ -85,8 +101,7 @@ export default {
                 '    }\n'  + 
                 '}',
                 python: 
-                'if __name__ == "__main__":\n' +
-                '   print(\'Hello World\')',
+                'if __name__ == "__main__":\n',
                 cpp: 
                 '# include<iostream>\n' +
                 '\n' + 
@@ -95,6 +110,14 @@ export default {
                 '}',
             },
             pageMode: 'create',  // pageMode can be 'create' or 'update'
+            saveDisabled: false,
+            deleting: false,
+            deleteConfirmModal: false,
+            logWebsocket: null,
+            fileReadModalContent: '',
+            fileReadModalTitle: '',
+            fileReadModal: false,
+            canCheckResult: true,
         }
     },
     components: {
@@ -109,10 +132,147 @@ export default {
             require('brace/theme/chrome');
             require('brace/snippets/javascript'); //snippet
         },
-        saveChange() {
-        },
         runCode() {
+            console.log(this.runStdin);
+            var id = this.$route.params.id;
+            this.canRun = false;
+            var _this = this;
+            this.canCheckResult = false;
+            // enable the log after 5 secons
+            setTimeout(() => {
+                _this.canCheckResult = true;
+            }, 2000);
+            axios
+                .post("/api/single-file-code/run", {
+                    id: id,
+                    type: this.curStatus.type.toUpperCase(),
+                    stdin: this.runStdin,
+                })
+                .then(function (response) {
+                    console.log(response);
+                    _this.canRun = true;
+                })
+                .catch(function (error) {
+                    alert(error);
+                    _this.canRun = true;
+                });
         },
+        reset() {
+            this.curStatus.name = this.originStatus.name;
+            this.curStatus.description = this.originStatus.description;
+            this.curStatus.type = this.originStatus.type;
+            this.curStatus.code = this.originStatus.code;
+        },
+        resetCodeToOrigin() {
+            this.curStatus.code = this.originStatus.code;
+            this.curStatus.type = this.originStatus.type;
+        },
+        saveUpdate() {
+            if (this.curStatus.code === '' || this.curStatus.name === ''
+            || this.curStatus.description === '' || this.curStatus.type === '') {
+                alert('Please fill all inputs to save update');
+                return;
+            }
+            var id = this.$route.params.id;
+            if (id === 'new') {
+                var apiUrl = `/api/single-file-code`;
+                var _this = this;
+                axios
+                    .post(apiUrl, {
+                        name: this.curStatus.name,
+                        description: this.curStatus.description,
+                        code: this.curStatus.code,
+                        type: this.curStatus.type.toUpperCase(),
+                    })
+                    .then(function(response) {
+                        _this.$router.push({path: `/single-file-code/${response.data.id}`});
+                        _this.curStatus.name = response.data.name;
+                        _this.originStatus.name = response.data.name;
+                        _this.curStatus.description = response.data.description;
+                        _this.originStatus.description = response.data.description;
+                        _this.curStatus.code = response.data.code;
+                        _this.originStatus.code = response.data.code;
+                        _this.curStatus.type = response.data.type.toLowerCase();
+                        _this.originStatus.type = response.data.type.toLowerCase();
+                        _this.saveDisabled = false;
+                    })
+                    .catch(function(error) {
+                        alert(error);
+                        _this.saveDisabled = false;
+                    });
+                this.saveDisabled = true;
+            } else {
+                var apiUrl = `/api/single-file-code/${id}`;
+                var _this = this;
+                axios
+                    .put(apiUrl, {
+                        id: id,
+                        name: this.curStatus.name,
+                        description: this.curStatus.description,
+                        code: this.curStatus.code,
+                        type: this.curStatus.type.toUpperCase(),
+                    })
+                    .then(function(response) {
+                        _this.curStatus.name = response.data.name;
+                        _this.originStatus.name = response.data.name;
+                        _this.curStatus.description = response.data.description;
+                        _this.originStatus.description = response.data.description;
+                        _this.curStatus.code = response.data.code;
+                        _this.originStatus.code = response.data.code;
+                        _this.curStatus.type = response.data.type.toLowerCase();
+                        _this.originStatus.type = response.data.type.toLowerCase();
+                        _this.saveDisabled = false;
+                    })
+                    .catch(function(error) {
+                        alert(error);
+                        _this.saveDisabled = false;
+                    });
+                this.saveDisabled = true;
+            }
+        },
+        deleteCode() {
+            this.deleting = true;
+            var id = this.$route.params.id;
+            if (id === 'new') {
+                this.deleting = false;
+                this.deleteConfirmModal = false;
+                return;
+            } else {
+                var url = `/api/single-file-code/${id}`;
+                var router = this.$router;
+                var _this = this;
+                axios
+                    .delete(url)
+                    .then(function (response) {
+                        router.push('/single-file-code');
+                    })
+                    .catch(function (error) {
+                        _this.deleting = false;
+                        _this.deleteConfirmModal = false;
+                        alert(error);
+                    });
+            }
+        },
+        fileReadModalOpen(fileName, title) {
+            var id = this.$route.params.id;
+            if (id === 'new') {
+                alert('Please save and run first');
+                return;
+            }
+            var url = `ws://${window.location.host}/file-read?type=singleFileCode&id=${id}&fileName=${fileName}`;
+            this.logWebsocket = new WebSocket(url);
+            var _this = this;
+            this.logWebsocket.onmessage = function (ev) {
+                _this.fileReadModalContent = _this.fileReadModalContent + ev.data;
+            };
+            this.fileReadModal = true;
+            this.fileReadModalTitle = title;
+        },
+        fileReadModalClose() {
+            this.fileReadModalContent = '';
+            this.logWebsocket.close();
+            this.fileReadModal = false;
+        }
     },
     computed: {
         editorLang() {
@@ -121,6 +281,10 @@ export default {
             } else {
                 return this.curStatus.type;
             }
+        },
+        canRun() {
+            return this.curStatus.code === this.originStatus.code &&
+            this.$route.params.id !== "new";
         }
     },
     created() {
@@ -162,7 +326,10 @@ export default {
     },
     watch: {
         'curStatus.type': function (newType) {
-            this.curStatus.code = this.defaultCode[newType];
+            if (this.curStatus.code !== this.originStatus.code || 
+            this.curStatus.type !== this.originStatus.type) {
+                this.curStatus.code = this.defaultCode[newType];
+            }
         }
     },
 }

@@ -6,6 +6,10 @@ module.exports = {
                 target: 'http://localhost:8088',
                 ws: true,  // true if the websocket will be proxy also
                 changeOrigin: true
+            },
+            '/file-read': {
+                target: 'ws://localhost:8088',
+                ws: true,
             }
         }
     },

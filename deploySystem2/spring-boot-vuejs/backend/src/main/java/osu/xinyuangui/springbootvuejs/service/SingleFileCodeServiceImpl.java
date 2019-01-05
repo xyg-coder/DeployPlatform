@@ -96,4 +96,12 @@ public class SingleFileCodeServiceImpl implements SingleFileCodeService {
     public int getTotalCount() {
         return (int)codeRepository.count();
     }
+
+    @Override
+    public void deleteCode(int id) throws IOException {
+        logger.info("delete code: " + id);
+        SingleFileCode code = codeRepository.getOne(id);
+        codeRepository.delete(code);
+        FileIO.deleteCodeFolder(code, userCodePath);
+    }
 }

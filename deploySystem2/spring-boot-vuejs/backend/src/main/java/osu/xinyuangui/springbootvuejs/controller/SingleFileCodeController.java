@@ -10,11 +10,13 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeBrief;
-import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeType;
 import osu.xinyuangui.springbootvuejs.service.SingleFileCodeService;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
+
+import static org.springframework.web.bind.annotation.RequestMethod.DELETE;
 
 /**
  * This controller will handle the request for the single file controller
@@ -57,7 +59,7 @@ public class SingleFileCodeController {
     }
 
     @PostMapping("")
-    public ResponseEntity createNewCode(SingleFileCode createdCode) {
+    public ResponseEntity createNewCode(@RequestBody SingleFileCode createdCode) {
         logger.info("Create new single file code");
         try {
             createdCode = singleFileCodeService.updateCode(createdCode);
@@ -70,8 +72,8 @@ public class SingleFileCodeController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity updateSingleFileCode(SingleFileCode newCode) {
-        logger.info("update new code");
+    public ResponseEntity updateSingleFileCode(@RequestBody SingleFileCode newCode) {
+        logger.info("update new code: " + newCode.getId());
         try {
             newCode = singleFileCodeService.updateCode(newCode);
             return ResponseEntity.ok(newCode);
@@ -82,56 +84,24 @@ public class SingleFileCodeController {
         }
     }
 
-    @PostMapping(value = "run", params = {"id", "type", "stdin"})
-    public ResponseEntity runCode(@RequestParam("id") int id,
-                                  @RequestParam("type") String type,
-                                  @RequestParam("stdin") String stdin) {
+    @PostMapping(value = "run")
+    public ResponseEntity runCode(@RequestBody Map<String, Object> jsonBody) {
         logger.info("run code is called");
-        return singleFileCodeService.runCode(id, type, stdin);
+        int id = Integer.parseInt((String)jsonBody.get("id"));
+        String stdin =  (String)jsonBody.get("stdin");
+        return singleFileCodeService.runCode(id, (String) jsonBody.get("type"), stdin);
     }
 
-    @GetMapping("mock")
-    public ResponseEntity getMockData() {
-        SingleFileCode code = new SingleFileCode();
-        code.setType(SingleFileCodeType.JAVA);
-        code.setName("code");
-        code.setDescription("code");
-        code.setCode("public class Main {\n" +
-                "    public static void main(String[] args) {\n" +
-                "        System.out.println(\"Hello world\");\n" +
-                "    }\n" +
-                "}");
+    @RequestMapping(value = "/{id}", method = DELETE)
+    public ResponseEntity deleteCode(@PathVariable("id") int id) {
+        logger.info("delete code is called: " + id);
         try {
-            singleFileCodeService.updateCode(code);
+            singleFileCodeService.deleteCode(id);
+            return ResponseEntity.ok("delete " + id + " successfully");
         } catch (IOException e) {
             logger.error(e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
         }
-        return ResponseEntity.ok("saved");
-    }
-
-    @GetMapping(value = "mock", params = "id")
-    public ResponseEntity mockWithId(@RequestParam("id") int id) {
-        SingleFileCode code = new SingleFileCode();
-        code.setId(id);
-        code.setType(SingleFileCodeType.JAVA);
-        code.setName("code " + id);
-        code.setDescription("code");
-        code.setCode("public class Main {\n" +
-                "    public static void main(String[] args) {\n" +
-                "        System.out.println(\"Hello world\");\n" +
-                "    }\n" +
-                "}");
-        try {
-            singleFileCodeService.updateCode(code);
-        } catch (IOException e) {
-            logger.error(e.getMessage());
-            return ResponseEntity
-                    .status(HttpStatus.INTERNAL_SERVER_ERROR)
-                    .body(e.getMessage());
-        }
-        return ResponseEntity.ok("saved");
     }
 }

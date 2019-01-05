@@ -11,12 +11,12 @@
                         </MenuItem>
                         <MenuItem name="2">
                             <Icon type="ios-keypad"></Icon>
-                            <router-link class="nav-router-line" to="web-code">Web Code</router-link>
+                            <router-link class="nav-router-line" to="/web-code">Web Code</router-link>
                         </MenuItem>
                     </div>
                 </Menu>
             </Header>
-            <Content :style="{margin: '88px 20px 0', background: '#fff', minHeight: '820px'}">
+            <Content :style="{margin: '88px 20px 0', background: '#fff', minHeight: '500px'}">
               <router-view />
             </Content>
             <Footer class="layout-footer-center">2019 &copy; Xinyuan Gui</Footer>
@@ -51,6 +51,9 @@
     }
     .nav-router-line {
         color: white;
+    }
+    .ivu-layout-header {
+        z-index: 999;
     }
 </style>
 

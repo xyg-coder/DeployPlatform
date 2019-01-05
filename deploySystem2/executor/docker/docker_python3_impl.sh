@@ -30,5 +30,5 @@ while [ $? -eq 0 ]; do
     fi
     ps -ef | grep "python main.py" | grep -v grep > /dev/null
 done
-echo "\n\n\nFinish Running" >> result.log
+printf "\n\n\nFinish Running" >> result.log
 exit 0

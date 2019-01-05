@@ -22,4 +22,6 @@ public interface SingleFileCodeService {
     String[] getKillFileReadingProcessCommand(int id, String fileName);
 
     int getTotalCount();
+
+    void deleteCode(int id) throws IOException;
 }

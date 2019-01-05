@@ -7,8 +7,8 @@
 
 cd code
 rm -rf result.log
-echo "Begin Building\n\n\n" >> result.log
-g++ main.cpp -o single_file_out.out >> result.log 2>>result.log && echo "\n\n\nFinish Building\n\n\n" >> result.log && \
+printf "Begin Building\n\n\n" >> result.log
+g++ main.cpp -o single_file_out.out >> result.log 2>>result.log && printf "\n\n\nFinish Building\n\n\n" >> result.log && \
 { time ./single_file_out.out $3 >> result.log 2>>result.log & } 2>> result.log
 
 # monitor the size of the folder every 5 seconds, exit if exceed the limit
@@ -32,5 +32,5 @@ while [ $? -eq 0 ]; do
     fi
     ps -ef | grep "./single_file_out.out" | grep -v grep > /dev/null
 done
-echo "\n\n\nFinish Running" >> result.log
+printf "\n\n\nFinish Running" >> result.log
 exit 0

@@ -6,11 +6,13 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.CloseStatus;
+import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import osu.xinyuangui.springbootvuejs.service.SingleFileCodeService;
 import osu.xinyuangui.springbootvuejs.util.StringUtil;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,7 +22,6 @@ import java.util.concurrent.ConcurrentHashMap;
  * A thread will hold this process to get output stream for the websocket
  * When connection closes, this process will also close
  */
-@Component
 public class FileReadingWebsocketHandler extends AbstractWebSocketHandler {
     private Logger logger = LoggerFactory.getLogger(FileReadingWebsocketHandler.class);
 
@@ -36,6 +37,8 @@ public class FileReadingWebsocketHandler extends AbstractWebSocketHandler {
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
         super.afterConnectionEstablished(session);
 
+        logger.info("get connection: " + session.getUri());
+
         Map<String, String> queryMap = StringUtil.queryStringParse(session.getUri().getQuery());
         String type = queryMap.get("type");
         String idStr = queryMap.get("id");
@@ -49,12 +52,17 @@ public class FileReadingWebsocketHandler extends AbstractWebSocketHandler {
         Process process = null;
 
         // single file code
-        killCommand = singleFileCodeService.getKillFileReadingProcessCommand(id, fileName);
-        process = singleFileCodeService.getFileReadingProcess(id, fileName);
-
-        FileReadingWebsocketThread readingThread = new FileReadingWebsocketThread(process, session,
-                killCommand);
-        threadMap.put(session.getId(), readingThread);
+        try {
+            killCommand = singleFileCodeService.getKillFileReadingProcessCommand(id, fileName);
+            process = singleFileCodeService.getFileReadingProcess(id, fileName);
+            FileReadingWebsocketThread readingThread = new FileReadingWebsocketThread(process, session,
+                    killCommand);
+            taskExecutor.execute(readingThread);
+            threadMap.put(session.getId(), readingThread);
+        } catch (Exception e) {
+            session.sendMessage(new TextMessage(e.getMessage()));
+            throw e;
+        }
     }
 
     @Override
