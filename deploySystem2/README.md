@@ -8,9 +8,9 @@ This project is based on Spring Boot, Vuejs, Docker, Flask, Redis-RQ. Can be div
 
 ## Spring-boot-vuejs
 
-* Use **vuejs** as **frontend** part and spring boot as backend part.
-* During dev, vuejs and spring boot will run on two different ports. Vuejs server will send request to spring boot server.
-* During building, webpack will generate static files. And spring boot will use these static files to respond requests.
+* Use **vuejs** as frontend part and **spring boot** as backend part.
+* in dev mode, vuejs and spring boot will run on two different ports. Vuejs server will send request to spring boot server.
+* In build mode, webpack will generate static files. And spring boot will use these static files to respond to requests.
 
 ## Executor
 
