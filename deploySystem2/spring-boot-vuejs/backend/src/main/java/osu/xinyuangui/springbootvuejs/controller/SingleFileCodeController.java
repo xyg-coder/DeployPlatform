@@ -3,11 +3,15 @@ package osu.xinyuangui.springbootvuejs.controller;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeBrief;
 import osu.xinyuangui.springbootvuejs.service.SingleFileCodeService;
@@ -102,6 +106,57 @@ public class SingleFileCodeController {
             logger.error(e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(e.getMessage());
+        }
+    }
+
+    @PostMapping(value = "/upload/{id}")
+    public ResponseEntity handleFilesUpload(@PathVariable ("id") int id, @RequestParam("file") MultipartFile file) {
+        logger.info("file upload is called " + id);
+        try {
+            singleFileCodeService.saveFile(id, file);
+            return ResponseEntity.ok("saved success");
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(e.getMessage());
+        }
+
+    }
+
+    /**
+     * get the file-list except for the code-file and result.log
+     * @param id
+     * @return
+     */
+    @GetMapping(value = "/file-list/{id}")
+    public List<String> getFileList(@PathVariable("id") int id) {
+        logger.info("get file list: " + id);
+        return singleFileCodeService.getFileNames(id);
+    }
+
+    /**
+     * delete the files and return the existing files
+     * @param params
+     * @return
+     */
+    @PostMapping(value = "/file-list/{id}")
+    public List<String> deleteFiles(@PathVariable("id") int id, @RequestBody Map<String, Object> params) {
+        logger.info("delete files: " + id);
+        List<String> names = (List<String>)params.get("names");
+        if (names == null || names.size() == 0) {
+            return singleFileCodeService.getFileNames(id);
+        }
+        return singleFileCodeService.deleteFiles(id, names);
+    }
+
+    @GetMapping(value = "/file-list/{id}", params = "fileName")
+    public ResponseEntity getFile(@PathVariable("id") int id, @RequestParam("fileName") String fileName) {
+        logger.info("get file: " + fileName);
+        try {
+            Resource resource = singleFileCodeService.getFileResource(id, fileName);
+            return ResponseEntity.ok(resource);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
         }
     }
 }

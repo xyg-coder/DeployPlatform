@@ -16,12 +16,17 @@
         * Code Editor, finish
         * stdin editor, finish
         * Run code, finish
-        * Get file list
+        * Get file list, finish
         * Read file, finish
-        * Upload and download file
+        * Upload and download file, finish
     * Save and run function, finish
 
 * Backend server
     * websocket, finish
-    * Upload and download file
+    * Upload and download file, finish
     * Add pagination, finish
+
+* File upload, download, delete
+    * Upload and download file, finish
+    * Read file online, finish (last line has some problem since BufferedReader checks \n)
+    * Delete Files (Delete and reading can be done in same modal), finish

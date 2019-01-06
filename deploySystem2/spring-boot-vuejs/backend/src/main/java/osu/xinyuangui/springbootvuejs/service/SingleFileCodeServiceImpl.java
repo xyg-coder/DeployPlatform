@@ -4,15 +4,19 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.Resource;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.*;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.web.multipart.MultipartFile;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCode;
 import osu.xinyuangui.springbootvuejs.domain.SingleFileCodeBrief;
 import osu.xinyuangui.springbootvuejs.repository.SingleFileCodeRepository;
 import osu.xinyuangui.springbootvuejs.util.FileIO;
+import osu.xinyuangui.springbootvuejs.util.StorageException;
+import osu.xinyuangui.springbootvuejs.util.StorageFileNotFoundException;
 
 import java.io.IOException;
 import java.util.List;
@@ -103,5 +107,30 @@ public class SingleFileCodeServiceImpl implements SingleFileCodeService {
         SingleFileCode code = codeRepository.getOne(id);
         codeRepository.delete(code);
         FileIO.deleteCodeFolder(code, userCodePath);
+    }
+
+    @Value("${userdirectory.max-size}")
+    private long maxDirectorySizeInKb;
+
+    @Override
+    public void saveFile(int id, MultipartFile file) throws StorageException {
+        String destination = String.format("%s/%s", userCodePath, id);
+        FileIO.storeFile(destination, file, maxDirectorySizeInKb * 1024);
+    }
+
+    @Override
+    public List<String> getFileNames(int id) throws StorageFileNotFoundException {
+        String destination = String.format("%s/%s", userCodePath, id);
+        return FileIO.getFileList(destination);
+    }
+
+    @Override
+    public List<String> deleteFiles(int id, List<String> files) throws StorageFileNotFoundException {
+        return FileIO.deleteFiles(String.format("%s/%s", userCodePath, id), files);
+    }
+
+    @Override
+    public Resource getFileResource(int id, String file) throws StorageFileNotFoundException, IOException {
+        return FileIO.getResourceOfFile(String.format("%s/%s", userCodePath, id), file);
     }
 }

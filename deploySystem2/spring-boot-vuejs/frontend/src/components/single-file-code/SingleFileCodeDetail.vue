@@ -27,6 +27,16 @@
                     <Input v-model="runStdin" placeholder="Input stdin here" type="textarea" style="width: auto" icon="md-refresh" />
                     <Button style="margin-left: 10px" type="primary" shape="circle" icon="md-refresh" v-on:click="runStdin=''"></Button>
                 </div>
+                <div v-if="canUploadFile" style="margin-top: 20px">
+                    <Upload 
+                        :action="uploadUrl" :show-upload-list="false" :max-size="maxUploadSize"
+                        :on-exceeded-size="uploadSizeExceed" :on-progress="disableFileOperations"
+                        :on-success="uploadFileSuccess" :on-error="uploadFileFail">
+                        <Button icon="ios-cloud-upload-outline">Upload files</Button>
+                    </Upload>
+                    <br/>
+                    <Button v-if="canUploadFile" v-on:click="getFileList">Operate Files</Button>
+                </div>
                 <div style="margin-top: 20px">
                     <Button type="success" :disabled="saveDisabled" long v-on:click="saveUpdate"> Save </Button>
                     <br><br>
@@ -54,6 +64,22 @@
                 </div>
                 <div slot="footer">
                     <Button type="info" size="large" long @click="fileReadModalClose">Close</Button>
+                </div>
+            </Modal>
+            <Modal v-model="fileOperationModal">
+                <div style="border-bottom: 1px solid #e9e9e9;padding-bottom:6px;margin-bottom:6px;">
+                    <Checkbox
+                        :indeterminate="indeterminate"
+                        :value="checkAll"
+                        @click.prevent.native="handleCheckAll">Pick All</Checkbox>
+                </div>
+                <CheckboxGroup v-model="checkAllGroup" @on-change="checkAllGroupChange">
+                    <Checkbox v-for="item in browserFileList" :label="item"></Checkbox>
+                </CheckboxGroup>
+                <div slot="footer">
+                    <Button type="error" :disabled="!canDeleteFile" v-on:click="deleteFiles" :loading="fileLoading">Delete</Button>
+                    <Button type="info" :disabled="!canReadFile" :loading="fileLoading" v-on:click="readFile">Read</Button>
+                    <Button type="info" :disabled="!canDownloadFile" :loading="fileLoading" v-on:click="downloadFile">Download</Button>
                 </div>
             </Modal>
         </Row>
@@ -118,6 +144,15 @@ export default {
             fileReadModalTitle: '',
             fileReadModal: false,
             canCheckResult: true,
+            uploadUrl: '',
+            maxUploadSize: 1024,
+            canUploadFile: true,
+            browserFileList: [],
+            fileOperationModal: false,
+            indeterminate: true,
+            checkAll: false,
+            checkAllGroup: [],
+            fileLoading: false,
         }
     },
     components: {
@@ -272,6 +307,109 @@ export default {
             this.fileReadModalContent = '';
             this.logWebsocket.close();
             this.fileReadModal = false;
+        },
+        uploadSizeExceed() {
+            alert("File size exceeds the limit, the limit is " + this.maxUploadSize + "kb");
+        },
+        disableFileOperations() {
+            this.canUploadFile = false;
+        },
+        uploadFileSuccess(response, file) {
+            alert(file + " uploads successfully");
+            this.canUploadFile = true;
+        },
+        uploadFileFail(error, file) {
+            alert(file + " uploads failed " + error);
+            this.canUploadFile = true;
+        },
+        getFileList() {
+            var id = this.$route.params.id;
+            if (id === "new") {
+                return;
+            }
+            var url = `/api/single-file-code/file-list/${id}`;
+            var _this = this;
+            axios
+                .get(url)
+                .then(function (response) {
+                    _this.browserFileList = response.data;
+                    _this.fileOperationModal = true;
+                })
+                .catch(function (error) {
+                    alert(error);
+                });
+        },
+        handleCheckAll() {
+            if (this.indeterminate) {
+                this.checkAll = false;
+            } else {
+                this.checkAll = !this.checkAll;
+            }
+            this.indeterminate = false;
+
+            if (this.checkAll) {
+                this.checkAllGroup = this.browserFileList;
+            } else {
+                this.checkAllGroup = [];
+            }
+        },
+        checkAllGroupChange (data) {
+            if (data.length === this.browserFileList.length) {
+                this.indeterminate = false;
+                this.checkAll = true;
+            } else if (data.length > 0) {
+                this.indeterminate = true;
+                this.checkAll = false;
+            } else {
+                this.indeterminate = false;
+                this.checkAll = false;
+            }
+        },
+        deleteFiles() {
+            var id = this.$route.params.id;
+            if (id === 'new') {
+                return;
+            }
+            var api = `/api/single-file-code/file-list/${id}`;
+            var deleteFiles = this.checkAllGroup;
+            var _this = this;
+            this.fileLoading = true;
+            axios
+                .post(api, {
+                    names: deleteFiles,
+                })
+                .then(function (response) {
+                    _this.browserFileList = response.data;
+                    _this.fileLoading = false;
+                })
+                .catch(function (error) {
+                    alert(error);
+                    _this.fileLoading = false;
+                });
+        },
+        readFile() {
+            var fileName = this.checkAllGroup[0];
+            this.fileReadModalOpen(fileName, fileName);
+        },
+        downloadFile() {
+            var id = this.$route.params.id;
+            if (id === 'new') {
+                return;
+            }
+            var fileName = this.checkAllGroup[0];
+            var apiUrl = `/api/single-file-code/file-list/${id}?fileName=${fileName}`;
+            axios({
+                url: apiUrl,
+                method: 'GET',
+                responseType: 'blob',
+            }).then((response) => {
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+                const link = document.createElement('a');
+                link.href = url;
+                link.setAttribute('download', fileName);
+                document.body.appendChild(link);
+                link.click();
+            });
         }
     },
     computed: {
@@ -285,10 +423,20 @@ export default {
         canRun() {
             return this.curStatus.code === this.originStatus.code &&
             this.$route.params.id !== "new";
-        }
+        },
+        canDeleteFile() {
+            return this.checkAllGroup.length > 0;
+        },
+        canReadFile() {
+            return this.checkAllGroup.length === 1;
+        },
+        canDownloadFile() {
+            return this.checkAllGroup.length === 1;
+        },
     },
     created() {
         if (this.$route.params.id === "new") {
+            this.canUploadFile = false;
             this.pageMode = 'create';
             this.originStatus = {
                 name: '',
@@ -306,6 +454,7 @@ export default {
             this.pageMode = 'update';
             var id = this.$route.params.id;
             var url = `/api/single-file-code/${id}`;
+            this.uploadUrl = `/api/single-file-code/upload/${id}`;
             axios
                 .get(url)
                 .then((response) => {
@@ -329,6 +478,14 @@ export default {
             if (this.curStatus.code !== this.originStatus.code || 
             this.curStatus.type !== this.originStatus.type) {
                 this.curStatus.code = this.defaultCode[newType];
+            }
+        },
+        '$route.params.id': function (newId) {
+            if (newId === 'new') {
+                this.canUploadFile = false;
+            } else {
+                this.canUploadFile = true;
+                this.uploadUrl = `/api/single-file-code/upload/${newId}`;
             }
         }
     },
