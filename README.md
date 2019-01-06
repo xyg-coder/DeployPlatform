@@ -1,10 +1,9 @@
 # DeployPlatform
 
-## Target
+## Deploy System
 
-1. Support Java, cpp, python sandbox function. User can use this to test algorithms, read & write file.
-2. Support web applications with mysql, mongodb database. We provide users one username and password. User need to provide one way to start this service.
+* Pure Spring Boot project. Can use maven-based git url to run code.
 
-## Todo
+## Deploy System2
 
-1. Add Sandbox function: select language, upload file, get output and get file materials.
+* Use Spring Boot as backend, vuejs as front end. The code runs in docker container handled by python execution server.

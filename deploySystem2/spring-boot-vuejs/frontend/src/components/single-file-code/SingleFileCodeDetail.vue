@@ -60,7 +60,7 @@
                     <Icon type="ios-information-circle"></Icon>
                     <span>File Reading Modal</span>
                 </p>
-                <div style="text-align:center" v-html="fileReadModalContent">
+                <div v-html="fileReadModalContent">
                 </div>
                 <div slot="footer">
                     <Button type="info" size="large" long @click="fileReadModalClose">Close</Button>
